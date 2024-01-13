@@ -3,11 +3,13 @@ import typing as t
 
 from datetime import datetime
 
+from init import TZ
 from db.base import METADATA, begin_connection, connection_for_check_msg
 
 
 class MessageRow(t.Protocol):
     id: int
+    created_at: datetime
     chat_id: int
     message_id: int
     user_id: int
@@ -25,6 +27,7 @@ MessageTable = sa.Table(
     'messages',
     METADATA,
     sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column ('created_at', sa.DateTime),
     sa.Column('chat_id', sa.BigInteger),
     sa.Column('message_id', sa.Integer),
     sa.Column('give_id', sa.Integer),
@@ -51,9 +54,11 @@ async def add_message(
         media_id: str,
         content_type: str
 ) -> None:
+    now = datetime.now(TZ)
     async with begin_connection() as conn:
         await conn.execute(
             MessageTable.insert().values(
+                created_at=now,
                 chat_id=chat_id,
                 message_id=message_id,
                 user_id=user_id,
@@ -96,6 +101,15 @@ async def get_all_give_user_info(give_id: int, on_users: bool) -> list[MessageRo
         result = await conn.execute(query)
 
     return list(result.all())
+
+
+# удаляет записи гива
+async def get_winner(give_id: int, user_id: int) -> MessageRow:
+    async with connection_for_check_msg () as conn:
+        result = await conn.execute(
+            MessageTable.select().where(MessageTable.c.give_id == give_id, MessageTable.c.user_id == user_id)
+        )
+    return result.first()
 
 
 # удаляет записи гива

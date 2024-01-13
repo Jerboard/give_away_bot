@@ -31,6 +31,7 @@ MY_ID = int(getenv('MY_ID'))
 TZ = timezone('europe/moscow')
 # Europe/Moscow
 DATE_FORMAT = '%d.%m'
+DATETIME_FORMAT = '%d.%m:%Y %H:%M'
 
 
 async def set_main_menu() -> None:

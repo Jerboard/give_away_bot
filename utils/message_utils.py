@@ -2,57 +2,26 @@ import typing as t
 import json
 import random
 
+from datetime import datetime
+
 from aiogram.types import InlineKeyboardMarkup, Message, MessageEntity
 from aiogram.enums.content_type import ContentType
 
 import db
-from init import bot
+from init import bot, DATETIME_FORMAT
 from keyboards import inline_kb as kb
 
 
-async def test(chat_id: int):
-    # 1562 1554
-    users_tuple = await db.get_all_give_user_info (11, on_users=False)
-    users = list (users_tuple)
-    print(len(users))
-    sent = None
-
-    lost_winners = 5
-    all_numbers = list(range (0, 20))
-    random.shuffle(all_numbers)
-    win_list = all_numbers[:lost_winners - 1]
-    win_list.append (19)
-    for tour in range (0, 20):
-        champions_text = ''
-        for i in range (0, lost_winners):
-            user = random.choice (users)
-            row = f'{user.full_name}\n'
-            champions_text = f'{champions_text}{row}'
-
-        text = f'Выбор победителей:\n\n{champions_text}'
-
-        if not sent:
-            sent = await bot.send_message (
-                chat_id=chat_id,
-                text=text)
-        else:
-            await sent.edit_text (text)
-
-        if tour in win_list:
-            winner = random.choice (users)
-            while winner.username:
-                winner = random.choice (users)
-
-            users.remove (winner)
-
-            await bot.send_message (
-                chat_id=chat_id,
-                text=f'🎉🎉🎉 {winner.full_name}',
-                reply_markup=kb.get_send_winner_kb (winner.username))
-
-            lost_winners = lost_winners - 1
-
-    await sent.delete ()
+content_type_map = {
+    'text': 'сообщение',
+    'photo': 'фото',
+    'video': 'видео',
+    'video_note': 'видео заметку',
+    'animation': 'gif',
+    'voice': 'войс',
+    'document': 'файл',
+    'sticker': 'стикер'
+}
 
 
 # отправляет сообщение всех типов
@@ -224,85 +193,13 @@ def restore_entities(entities_string):
     return entities
 
 
-# отправляет сообщение всех типов
-# async def send_any_message(
-#         chat_id: int,
-#         msg: Message,
-#         keyboard: InlineKeyboardMarkup = None
-# ) -> t.Union[Message, None]:
-#     text = msg.text if msg.text else msg.caption
-#     entities = msg.entities if msg.entities else msg.caption_entities
-#
-#     if msg.content_type == 'text':
-#         sent = await bot.send_message(
-#             chat_id=chat_id,
-#             text=text,
-#             entities=entities,
-#             reply_markup=keyboard
-#         )
-#
-#     elif msg.content_type == 'photo':
-#         sent = await bot.send_photo (
-#             chat_id=chat_id,
-#             photo=msg.photo[-1].file_id,
-#             caption=text,
-#             caption_entities=entities,
-#             reply_markup=keyboard
-#         )
-#
-#     elif msg.content_type == 'video':
-#         sent = await bot.send_video (
-#             chat_id=chat_id,
-#             video=msg.video.file_id,
-#             caption=text,
-#             caption_entities=entities,
-#             reply_markup=keyboard
-#         )
-#
-#     elif msg.content_type == 'video_note':
-#         sent = await bot.send_video_note (
-#             chat_id=chat_id,
-#             video_note=msg.video_note.file_id,
-#             reply_markup=keyboard
-#         )
-#
-#     elif msg.content_type == 'animation':
-#         sent = await bot.send_animation (
-#             chat_id=chat_id,
-#             animation=msg.animation.file_id,
-#             caption=text,
-#             caption_entities=entities,
-#             reply_markup=keyboard
-#         )
-#
-#     elif msg.content_type == 'voice':
-#         sent = await bot.send_voice (
-#             chat_id=chat_id,
-#             voice=msg.voice.file_id,
-#             caption=text,
-#             caption_entities=entities,
-#             reply_markup=keyboard
-#         )
-#
-#     elif msg.content_type == 'document':
-#         sent = await bot.send_voice (
-#             chat_id=chat_id,
-#             voice=msg.document.file_id,
-#             caption=text,
-#             caption_entities=entities,
-#             reply_markup=keyboard
-#         )
-#
-#     elif msg.content_type == 'sticker':
-#         sent = await bot.send_voice (
-#             chat_id=chat_id,
-#             voice=msg.sticker.file_id,
-#             caption=text,
-#             caption_entities=entities,
-#             reply_markup=keyboard
-#         )
-#
-#     else:
-#         sent = None
-#
-#     return sent
+# текст победителя
+def get_winner_text(winner_info: db.MessageRow):
+    if winner_info.created_at:
+        send_time = winner_info.created_at.strftime(DATETIME_FORMAT)
+    else:
+        send_time = datetime.now().strftime(DATETIME_FORMAT)
+    message_format = content_type_map[winner_info.content_type]
+    return (f'🎉🎉🎉 {winner_info.full_name}\n'
+            f'{send_time} отправила {message_format}\n'
+            f'{winner_info.text}')

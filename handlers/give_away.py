@@ -10,10 +10,10 @@ import random
 
 
 import db
-from init import dp, bot
+from init import dp, bot, DATETIME_FORMAT
 from keyboards import inline_kb as kb
 from utils.access import check_is_channel_admin
-from utils.message_utils import send_any_message, restore_entities, get_bottom_text
+from utils.message_utils import send_any_message, restore_entities, get_bottom_text, get_winner_text
 
 
 # старт розыгрыша
@@ -144,8 +144,10 @@ async def start_create_give(cb: CallbackQuery, state: FSMContext):
 
             users.remove (winner)
             username = str(winner.username).replace('"', '')
+            winner_info = await db.get_winner(data['give_id'], winner.user_id)
+            text = get_winner_text(winner_info)
             await cb.message.answer(
-                text=f'🎉🎉🎉 {winner.full_name}',
+                text=text,
                 reply_markup=kb.get_send_winner_kb(username))
 
             lost_winners = lost_winners - 1
