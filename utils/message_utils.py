@@ -143,7 +143,7 @@ def get_bottom_text(
         prize_count: int = None,
         tour_count: int = None,
 ):
-    text = (f'\n\n➿➿➿➿➿➿➿➿➿➿➿➿➿➿➿➿➿\n\n'
+    text = (f'\n\n👇👇👇\n\n'
             f'Всего сообщений: {give_info ["message_count"]}\n'
             f'Уникальных пользователей: {give_info ["unique_user_count"]}')
 
@@ -199,7 +199,15 @@ def get_winner_text(winner_info: db.MessageRow):
         send_time = winner_info.created_at.strftime(DATETIME_FORMAT)
     else:
         send_time = datetime.now().strftime(DATETIME_FORMAT)
-    message_format = content_type_map[winner_info.content_type]
+
+    if winner_info.content_type == 'text':
+        content = winner_info.text
+    else:
+        message_format = content_type_map [winner_info.content_type]
+        content = f'{message_format}'
+        if winner_info.text:
+            content = f'{content}\n{winner_info.text}'
+
     return (f'🎉🎉🎉 {winner_info.full_name}\n'
-            f'{send_time} отправила {message_format}\n'
-            f'{winner_info.text}')
+            f'Время: {send_time}\n'
+            f'Комментарий: {content}\n')

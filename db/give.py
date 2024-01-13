@@ -29,7 +29,7 @@ GiveTable = sa.Table(
     sa.Column('chat_id', sa.BigInteger),
     sa.Column('message_id', sa.Integer),
     sa.Column('is_active', sa.Boolean),
-    sa.Column('text', sa.String(255)),
+    sa.Column('text', sa.Text),
     sa.Column('entities', sa.Text),
     sa.Column('media_id', sa.String(255)),
     sa.Column('content_type', sa.String(255)),

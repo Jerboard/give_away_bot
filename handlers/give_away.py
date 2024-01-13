@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.enums.chat_member_status import ChatMemberStatus
 from aiogram.filters import StateFilter
 from aiogram.fsm.state import default_state
+from aiogram.exceptions import TelegramBadRequest
 
 import random
 
@@ -66,16 +67,18 @@ async def start_create_give(cb: CallbackQuery, state: FSMContext):
             'message_id': cb.message.message_id,
             'type_': type_,
             'step': 'prize',
-            'count_prize': 0
+            'count_prize': 0,
+            'is_first': True
         })
 
         await cb.message.edit_reply_markup(reply_markup=None)
-        await cb.message.answer('Сколько будет призов?', reply_markup=kb.get_numeric_kb())
+        await cb.message.answer('Сколько будет победителей?', reply_markup=kb.get_numeric_kb())
 
 
 # старт розыгрыша
 @dp.callback_query(lambda cb: cb.data.startswith('give_away_numeric'))
 async def start_create_give(cb: CallbackQuery, state: FSMContext):
+    await cb.message.delete()
     _, numeric_str = cb.data.split(':')
     numeric = int (numeric_str)
 
@@ -85,32 +88,37 @@ async def start_create_give(cb: CallbackQuery, state: FSMContext):
     })
 
     data = await state.get_data ()
-    give = await db.get_give (give_id=data['give_id'])
+    # give = await db.get_give (give_id=data['give_id'])
+    #
+    # give_info = await db.get_give_info (data['give_id'])
+    # bottom_text = get_bottom_text (
+    #     give_info=give_info,
+    #     prize_count=data['count_prize'],
+    # )
 
-    give_info = await db.get_give_info (data['give_id'])
-    bottom_text = get_bottom_text (
-        give_info=give_info,
-        prize_count=data['count_prize'],
-    )
-
-    text = f'{give.text}{bottom_text}'
-    keyboard = kb.get_give_start_tour_kb ()
-    await cb.message.delete ()
-    await bot.delete_message(chat_id=cb.message.chat.id, message_id=data['message_id'])
-    await send_any_message (
-        chat_id=cb.message.chat.id,
-        text=text,
-        entities=restore_entities (give.entities),
-        media_id=give.media_id,
-        content_type=give.content_type,
-        keyboard=keyboard
-    )
+    # text = f'{give.text}{bottom_text}'
+    # keyboard = kb.get_give_start_tour_kb ()
+    # await cb.message.delete ()
+    # await bot.delete_message(chat_id=cb.message.chat.id, message_id=data['message_id'])
+    # await send_any_message (
+    #     chat_id=cb.message.chat.id,
+    #     text=text,
+    #     entities=restore_entities (give.entities),
+    #     media_id=give.media_id,
+    #     content_type=give.content_type,
+    #     keyboard=keyboard
+    # )
 
 
 # сам розыгрыш
-@dp.callback_query(lambda cb: cb.data.startswith('give_away_tour'))
-async def start_create_give(cb: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
+# @dp.callback_query(lambda cb: cb.data.startswith('give_away_tour'))
+# async def start_create_give(cb: CallbackQuery, state: FSMContext):
+#     _, del_message = cb.data.split(':')
+#
+#     if del_message == '1':
+#         await cb.message.edit_text('Следующий тур')
+#
+#     data = await state.get_data()
 
     on_user = True if data['type_'] == 'users' else False
     users = await db.get_all_give_user_info(data['give_id'], on_users=on_user)
@@ -118,10 +126,12 @@ async def start_create_give(cb: CallbackQuery, state: FSMContext):
     sent = None
 
     lost_winners = data['count_prize']
-    all_numbers = list (range (0, 20))
+    all_numbers = list (range (0, 19))
     random.shuffle (all_numbers)
     win_list = all_numbers [:lost_winners - 1]
     win_list.append (19)
+    print(win_list)
+    print(len(users))
     for tour in range (0, 20):
         champions_text = ''
 
@@ -135,7 +145,10 @@ async def start_create_give(cb: CallbackQuery, state: FSMContext):
         if not sent:
             sent = await cb.message.answer(text)
         else:
-            await sent.edit_text(text)
+            try:
+                await sent.edit_text(text)
+            except TelegramBadRequest:
+                pass
 
         if tour in win_list:
             winner = random.choice (users)
@@ -152,8 +165,29 @@ async def start_create_give(cb: CallbackQuery, state: FSMContext):
 
             lost_winners = lost_winners - 1
 
-    await sent.delete()
-    await cb.message.edit_reply_markup(reply_markup=kb.get_give_restart_tour_kb(data['give_id']))
+    if data['is_first']:
+        await sent.delete()
+    else:
+        await sent.edit_text('Следующий тур')
+    # await sent.delete()
+    # if del_message == '0':
+    #     await cb.message.edit_reply_markup(reply_markup=None)
+
+    await cb.message.answer(text='Что делаем дальше?',
+                            reply_markup=kb.get_give_restart_tour_kb(
+                                give_id=data['give_id'],
+                                type=data['type_']
+                            ))
+
+
+@dp.callback_query(lambda cb: cb.data.startswith('give_away_restart'))
+async def start_create_give(cb: CallbackQuery, state: FSMContext):
+    await cb.message.delete()
+    await state.update_data (data={
+        'is_first': False
+    })
+    # await cb.message.edit_reply_markup(reply_markup=None)
+    await cb.message.answer('Сколько будет победителей?', reply_markup=kb.get_numeric_kb())
 
 
 # закрывает розыгрыша

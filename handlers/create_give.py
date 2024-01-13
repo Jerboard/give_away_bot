@@ -104,14 +104,17 @@ async def send_give(cb: CallbackQuery, state: FSMContext):
                 content_type=sent.content_type
             )
 
-            give_info = await db.get_give_info(give_id)
-            bottom_text = get_bottom_text(give_info)
-            keyboard = kb.get_give_kb(give_id)
+            await cb.message.edit_reply_markup(reply_markup=None)
+            await cb.message.answer('✅ Собираю данные для розыгрыша')
 
-            if cb.message.text:
-                await cb.message.edit_text(text=f'{cb.message.text}{bottom_text}', reply_markup=keyboard)
-            else:
-                await cb.message.edit_caption(caption=f'{cb.message.caption}{bottom_text}', reply_markup=keyboard)
+            # give_info = await db.get_give_info(give_id)
+            # bottom_text = get_bottom_text(give_info)
+            # keyboard = kb.get_give_kb(give_id)
+            #
+            # if cb.message.text:
+            #     await cb.message.edit_text(text=f'{cb.message.text}{bottom_text}', reply_markup=None)
+            # else:
+            #     await cb.message.edit_caption(caption=f'{cb.message.caption}{bottom_text}', reply_markup=None)
 
         except Exception as ex:
             log_error(ex)

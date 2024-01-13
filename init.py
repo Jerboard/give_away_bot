@@ -37,11 +37,11 @@ DATETIME_FORMAT = '%d.%m:%Y %H:%M'
 async def set_main_menu() -> None:
     main_menu_commands = [
         BotCommand(command='/start',
-                   description='Запустить бот'),
+                   description='Перезапустить бот'),
         BotCommand (command='/new_give',
-                    description='Начать новый конкурс'),
+                    description='Начать новый розыгрыш'),
         BotCommand (command='/give_away',
-                    description='Провести конкурс'),
+                    description='Провести розыгрыш'),
     ]
 
     await bot.set_my_commands(main_menu_commands)

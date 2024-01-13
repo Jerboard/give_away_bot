@@ -60,7 +60,7 @@ def get_give_kb(give_id: int) -> InlineKeyboardMarkup:
 # клавиатура начала гива
 def get_give_start_tour_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button (text='🎰 Начать', callback_data=f'give_away_tour')
+    kb.button (text='🎰 Начать', callback_data=f'give_away_tour:0')
     kb.button (text='❌ Закрыть', callback_data=f'cancel')
 
     kb.adjust (1)
@@ -68,9 +68,9 @@ def get_give_start_tour_kb() -> InlineKeyboardMarkup:
 
 
 # клавиатура повтора гива
-def get_give_restart_tour_kb(give_id: int) -> InlineKeyboardMarkup:
+def get_give_restart_tour_kb(give_id: int, type: str) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button (text='🎰 Повторить розыгрыш', callback_data=f'give_away_tour')
+    kb.button (text='🎰 Продолжить розыгрыш', callback_data=f'give_away_restart')
     kb.button (text='🏁 Закончить розыгрыш', callback_data=f'give_away_finish:{give_id}')
 
     kb.adjust (1)
