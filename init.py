@@ -26,6 +26,7 @@ loop = asyncio.get_event_loop()
 dp = Dispatcher()
 bot = Bot(getenv("TOKEN"), parse_mode=ParseMode.HTML)
 
+DEBUG = bool(int(getenv('DEBUG')))
 ENGINE = create_async_engine(url=getenv('DB_URL'))
 MY_ID = int(getenv('MY_ID'))
 TZ = timezone('europe/moscow')
